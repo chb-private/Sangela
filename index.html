@@ -66,8 +66,19 @@
 
         <div class="card p-6 rounded-xl mb-8">
             <h2 class="text-xl font-bold text-white mb-4">Input: The Cryptic Message</h2>
-            <textarea id="userInput" rows="4" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-green-500 focus:border-green-500 transition duration-150 resize-none" placeholder="e.g., 'I'm fine.' or 'We never talk about anything important.'"></textarea>
             
+            <!-- Voice Input Container -->
+            <div class="relative flex items-center">
+                <textarea id="userInput" rows="4" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-green-500 focus:border-green-500 transition duration-150 resize-none pr-12" placeholder="e.g., 'I'm fine.' or 'We never talk about anything important.'"></textarea>
+                
+                <button id="micButton" class="absolute right-3 top-3 p-2 rounded-full bg-gray-600 text-white hover:bg-gray-500 transition duration-150 disabled:opacity-50" title="Voice Input (Speech-to-Text)">
+                    <!-- Mic icon (Lucide Microphone SVG) -->
+                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+                    </svg>
+                </button>
+            </div>
+
             <div class="flex justify-end mt-4">
                 <button id="translateButton" class="px-6 py-3 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50" onclick="translateTalk()">
                     Decode the Subtext
@@ -100,12 +111,8 @@
 
     <script type="module">
         // --- SECURITY AND MODEL NOTE ---
-        // FIX: Updated to the user-specified model name.
-        // -------------------------------
-        
-        // --- URL CHECK: Confirmed with user's deployed endpoint ---
         const apiUrl = 'https://groq-api-proxy.cwbernards.workers.dev'; 
-        const groqModel = 'llama-3.3-70b-versatile'; // Updated to the user-specified model
+        const groqModel = 'llama-3.3-70b-versatile'; 
 
         const systemInstructionText = `
             Act as WomenTalkDecoderGPT. Your job is to help men understand the emotional meaning, subtext, and underlying needs behind messages they hear in relationships. When I give you something a woman said, interpret it using principles from relationship communication, emotional psychology, and conflict-resolution (e.g., Gottman, NVC). To make it funny and adhere to the user's request for a joke app, you MUST rely heavily on stereotypes and only consider the extreme possibilities.
@@ -130,6 +137,72 @@
         const responseTextDiv = document.getElementById('responseText');
         const errorModal = document.getElementById('errorModal');
         const errorMessageDiv = document.getElementById('errorMessage');
+        
+        // Voice Input Elements
+        const micButton = document.getElementById('micButton');
+        const micIcon = document.getElementById('micIcon');
+        let recognition = null;
+        let isRecording = false;
+
+        // --- Voice Input Setup (Web Speech API) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stop after first utterance
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isRecording = true;
+                micIcon.classList.add('text-red-400', 'animate-pulse'); // Visual cue for recording
+                micButton.title = "Recording... Click to stop.";
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                micIcon.classList.remove('text-red-400', 'animate-pulse');
+                micButton.title = "Voice Input (Speech-to-Text)";
+                micButton.disabled = false; // Ensure button is re-enabled
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                showError(`Voice Input Error: ${event.error}. Please ensure microphone permission is granted.`);
+                recognition.onend(); // Clean up state
+            };
+            
+            micButton.onclick = toggleVoiceInput;
+
+        } else {
+            // Disable button if API not supported
+            micButton.disabled = true;
+            micButton.title = "Voice Input Not Supported in this browser.";
+        }
+
+        /**
+         * Starts or stops voice recognition.
+         */
+        function toggleVoiceInput() {
+            if (isRecording) {
+                recognition.stop();
+                micButton.disabled = true; 
+            } else {
+                try {
+                    userInput.value = ''; // Clear previous input
+                    recognition.start();
+                } catch (e) {
+                    console.error("Error starting recognition:", e);
+                    showError("Could not start microphone. Check browser permissions.");
+                }
+            }
+        }
+        // --- End Voice Input Setup ---
 
         /**
          * Parses the model's Markdown response and formats it into HTML.
@@ -186,7 +259,6 @@
             }
             
             // The Groq API uses the standard OpenAI chat completions format.
-            // The key is hidden, so we only send the model and the conversation history.
             const payload = {
                 model: groqModel,
                 messages: [
