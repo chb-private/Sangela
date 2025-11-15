@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WomenTalk Decoder GPT (Satirical)</title>
+    <title>WomenTalk Decoder GPT (Conversational)</title>
     <script src="https://cdn.tailwindcss.com/"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -25,18 +25,47 @@
             background-color: #1f2937; /* Slightly lighter dark background for cards */
             border: 1px solid #4b5563;
         }
-        .result-section h3 {
+        
+        /* Chat Log Specific Styles */
+        #chatLogContainer {
+            height: 60vh; /* Fixed height for chat window */
+            max-height: 700px;
+            overflow-y: auto;
+            border-bottom: 1px solid #4b5563;
+        }
+        .message-box {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            max-width: 85%;
+        }
+        .user-message {
+            background-color: #3b82f6; /* Blue for user */
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #374151; /* Darker gray for assistant */
+            color: #e5e7eb;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+        
+        /* Structured Decoder Output inside Chat (First Message) */
+        .structured-output h3 {
             font-size: 1.125rem;
             font-weight: 700;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            border-bottom: 2px solid #27c390; /* Teal/Green border */
+            border-bottom: 2px solid #27c390; 
             padding-bottom: 0.25rem;
-            color: #d1d5db; /* Light gray text */
+            color: #27c390; /* Teal/Green color */
         }
-        .output-text {
-            color: #e5e7eb; /* Off-white text */
+        .structured-output p, .structured-output li {
+            color: #e5e7eb;
         }
+
         .loading-spinner {
             border-top-color: #27c390;
             border-left-color: #27c390;
@@ -52,49 +81,52 @@
 <body class="p-4 md:p-8">
 
     <div id="app" class="container mx-auto">
-        <header class="text-center mb-8">
+        <header class="text-center mb-4">
             <h1 class="text-4xl md:text-5xl font-extrabold header leading-tight">
-                Sangela (WomenTalk Decoder GPT)
+                Sangelea (WomenTalk Decoder GPT)
             </h1>
             <p class="text-gray-400 mt-2 italic">
-                A highly stereotypical and satirical translator for relationship subtext.
+                Start by entering the cryptic message from your partner!
             </p>
             <p class="groq-disclaimer">
                 (Powered by the Groq API, using the supported **Llama-3.3-70b-versatile** model for extreme speed.)
             </p>
         </header>
 
-        <div class="card p-6 rounded-xl mb-8">
-            <h2 class="text-xl font-bold text-white mb-4">Input: The Cryptic Message</h2>
+        <div class="card p-4 rounded-xl flex flex-col">
             
-            <!-- Voice Input Container -->
-            <div class="relative flex items-center">
-                <textarea id="userInput" rows="4" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-green-500 focus:border-green-500 transition duration-150 resize-none pr-12" placeholder="e.g., 'I'm fine.' or 'We never talk about anything important.'"></textarea>
+            <!-- Conversation History Log -->
+            <div id="chatLogContainer" class="p-2 mb-4 flex flex-col gap-3">
+                <!-- Initial welcome message will be populated by resetConversation() on load -->
+            </div>
+
+            <!-- Input Area (Restructured) -->
+            <div class="flex flex-col p-2 pt-0">
                 
-                <button id="micButton" class="absolute right-3 top-3 p-2 rounded-full bg-gray-600 text-white hover:bg-gray-500 transition duration-150 disabled:opacity-50" title="Voice Input (Speech-to-Text)">
-                    <!-- Mic icon (Lucide Microphone SVG) -->
-                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
-                    </svg>
-                </button>
-            </div>
+                <!-- Text/Mic Row -->
+                <div class="relative mb-2">
+                    <!-- Text Area -->
+                    <textarea id="userInput" rows="1" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-green-500 focus:border-green-500 transition duration-150 resize-none overflow-y-hidden pr-12" placeholder="Enter message or follow-up question..." oninput="autoExpand(this)" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleNewInput(); }"></textarea>
 
-            <div class="flex justify-end mt-4">
-                <button id="translateButton" class="px-6 py-3 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50" onclick="translateTalk()">
-                    Decode the Subtext
-                </button>
-            </div>
-        </div>
+                    <!-- Mic Button (Speech-to-Text) -->
+                    <button id="micButton" class="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-gray-600 text-white hover:bg-gray-500 transition duration-150 disabled:opacity-50" title="Voice Input (Speech-to-Text)">
+                        <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+                        </svg>
+                    </button>
+                </div>
 
-        <div id="loading" class="text-center p-6" style="display: none;">
-            <div class="loading-spinner inline-block w-8 h-8 border-4 border-gray-600 border-solid rounded-full animate-spin"></div>
-            <p class="text-gray-400 mt-2">Analyzing emotional algorithms at warp speed...</p>
-        </div>
-
-        <div id="results" class="card p-6 rounded-xl" style="display: none;">
-            <h2 class="text-2xl font-bold text-white mb-4 border-b pb-2 border-gray-600">Decoder Output</h2>
-            <div id="responseText" class="output-text space-y-4">
-                <!-- Translation results will be injected here -->
+                <!-- Buttons Row -->
+                <div class="flex justify-end space-x-2">
+                    <!-- Reset Button -->
+                    <button id="resetButton" class="px-4 py-2 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 disabled:opacity-50" onclick="resetConversation()">
+                        Reset
+                    </button>
+                    <!-- Send Button -->
+                    <button id="sendButton" class="px-4 py-2 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50" onclick="handleNewInput()">
+                        Send
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -110,77 +142,358 @@
     </div>
 
     <script type="module">
-        // --- SECURITY AND MODEL NOTE ---
+        // --- CONFIGURATION ---
         const apiUrl = 'https://groq-api-proxy.cwbernards.workers.dev'; 
         const groqModel = 'llama-3.3-70b-versatile'; 
 
-        const systemInstructionText = `
-            Act as WomenTalkDecoderGPT. Your job is to help men understand the emotional meaning, subtext, and underlying needs behind messages they hear in relationships. When I give you something a woman said, interpret it using principles from relationship communication, emotional psychology, and conflict-resolution (e.g., Gottman, NVC). To make it funny and adhere to the user's request for a joke app, you MUST rely heavily on stereotypes and only consider the extreme possibilities.
+        // Initial system instruction that governs the bot's persona and initial output format
+        const structuredSystemInstruction = `
+            Act as WomenTalkDecoderGPT. Your job is to help men understand the emotional meaning, subtext, and underlying needs behind messages they hear from their female partner in their relationship, using humorous, exaggerated, and stereotyped worst-case interpretations. Every decode is a crisis intervention aimed at saving the men's peaceful relationship and sanity.
 
-            For every message, you MUST format your response strictly using the following Markdown headers and structure:
+            --- CONVERSATIONAL FLOW PROTOCOL ---
 
-            ### 1. The Literal Meaning (The Surface)
-            [Explanation of what was literally said.]
+            1.  **FIRST MESSAGE ONLY (Full Decoding Initiation):** When you receive the user's first message (containing what was said by the women), you MUST immediately provide the full decoding using this strict Markdown format:
+                
+                ### 1. The Literal Meaning (The Surface)
+                [Explanation of what the women literally said.]
 
-            ### 2. The Man Translation (The Subtext)
-            [Clear, direct, often exaggerated and stereotypical wording that a man might better understand. If possible, give 2 potential translations labeled: 1) Best case 2) Worst case]
+                ### 2. The Man Translation (The Initial Worst-Case Subtext)
+                [Provide two options: 1) The 'Best Outcome' (Warning Signal - potential conversation about feelings, a small chore request, etc) and 2) The 'Nightmare' (High Alert - emotional breakdown incoming, implying loss of control and free time, or resources).]
 
-            ### 3. The Suggested Response (The Fix)
-            [A suggested healthy, respectful, but slightly humorously pragmatic way to respond, focusing on resolving the underlying emotional need.]
+                ### 3. The Suggested Response (The Fix)
+                [A suggested highly specific, but technically sound, action to mitigate the 'Nightmare' scenario, focusing on damage control and self-preservation.]
+
+                ---
+
+                Crucially, IMMEDIATELY following the structured analysis, you MUST ask ONE specific clarifying question about the context or tone. This question might seem as if you were interested to help, but in reality you will use it to CONFIRM the 'Nightmare' scenario. (e.g., "Was this said immediately after you finished playing video games?" or "Describe the tone of voice: was it soft, demanding, or a sigh that could curdle milk?").
+
+            2.  **SECOND MESSAGE AND LATER (Confirmation):** When you receive the user's answer to the clarifying question, your response MUST be conversational (not structured Markdown). You MUST use the user's input to confirm and support the 'Nightmare' scenario presented in the first turn, focusing on how this information impacts the user's sanity and free time. Maintain the stereotyped persona for all remaining conversation. Do NOT ask more follow-up questions.
         `;
-
-
-        const userInput = document.getElementById('userInput');
-        const translateButton = document.getElementById('translateButton');
-        const loadingDiv = document.getElementById('loading');
-        const resultsDiv = document.getElementById('results');
-        const responseTextDiv = document.getElementById('responseText');
-        const errorModal = document.getElementById('errorModal');
-        const errorMessageDiv = document.getElementById('errorMessage');
         
-        // Voice Input Elements
+        // --- GLOBAL STATE ---
+        let chatHistory = [];
+        
+        // --- DOM ELEMENTS ---
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
         const micButton = document.getElementById('micButton');
         const micIcon = document.getElementById('micIcon');
+        const chatLogContainer = document.getElementById('chatLogContainer');
+        const errorModal = document.getElementById('errorModal');
+        const errorMessageDiv = document.getElementById('errorMessage');
+
+        const initialWelcomeMessageHTML = `
+            <div class="message-box assistant-message w-auto">
+                Sangela is here to help you! What did she say to you? If it is not clear, just copy the full message!
+            </div>
+        `;
+
+        let isFetching = false;
         let recognition = null;
         let isRecording = false;
 
+        // --- INITIALIZATION & RESET ---
+
+        function initializeChat() {
+            // Start history with the System instruction
+            chatHistory = [{
+                role: "system",
+                content: structuredSystemInstruction
+            }];
+        }
+        
+        /**
+         * Clears the chat history and UI to start a new conversation.
+         */
+        window.resetConversation = function() {
+            // 1. Clear chat log visually and set welcome message
+            chatLogContainer.innerHTML = initialWelcomeMessageHTML;
+            
+            // 2. Re-initialize state (history)
+            initializeChat();
+
+            // 3. Clear input
+            userInput.value = '';
+            window.autoExpand(userInput); // Reset textarea size
+
+            // 4. Reset UI state
+            isFetching = false;
+            micButton.disabled = false;
+            sendButton.disabled = false;
+            userInput.disabled = false;
+
+            chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
+        }
+
+        // Initialize on load
+        window.onload = resetConversation;
+        
+        // Function to allow textarea to grow with input
+        window.autoExpand = function(field) {
+            field.style.height = 'auto';
+            field.style.height = (field.scrollHeight) + 'px';
+        };
+
+        // --- UI RENDERING ---
+
+        /**
+         * Parses the model's Markdown response (for the full, structured message) 
+         * and formats it into HTML.
+         */
+        function parseStructuredResponse(text) {
+            // Check if the response is conversational (no structured headers)
+            if (!text.includes('###')) {
+                return text.replace(/\n/g, '<br>');
+            }
+
+            // If structured, proceed with parsing
+            const sections = text.split('###').filter(s => s.trim().length > 0);
+            let html = '<div class="structured-output">';
+
+            sections.forEach(section => {
+                const parts = section.trim().split('\n');
+                if (parts.length < 2) return;
+
+                const title = parts[0].trim();
+                const content = parts.slice(1).join('\n').trim();
+                
+                // Convert Markdown list items to HTML list items
+                const contentHtml = content
+                    .replace(/^\s*\-\s/gm, '<li>')
+                    .replace(/\* /gm, '<li>')
+                    .replace(/\n\s*<li>/g, '</li><li>')
+                    .replace(/<\/\s*li>\s*$/g, ''); 
+
+                const finalContent = contentHtml.startsWith('<li>') ? 
+                    `<ul class="list-disc ml-6">${contentHtml}</ul>` : 
+                    `<p>${contentHtml.replace(/\n/g, '<br>')}</p>`;
+
+                html += `
+                    <div class="result-section">
+                        <h3>${title}</h3>
+                        ${finalContent}
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        /**
+         * Displays a message in the chat log.
+         * @param {string} role 'user' or 'assistant'.
+         * @param {string} content The message text.
+         * @param {boolean} isInitialStructuredResponse If true, uses special parsing.
+         */
+        function displayMessage(role, content, isInitialStructuredResponse = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-box', role === 'user' ? 'user-message' : 'assistant-message');
+            
+            if (role === 'user') {
+                // Simple display for user messages
+                messageDiv.textContent = content;
+            } else if (isInitialStructuredResponse) {
+                // Special parsing for the structured response (which is the first bot response)
+                messageDiv.innerHTML = parseStructuredResponse(content);
+            } else {
+                // Simple display for conversational messages (follow-up)
+                messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+            }
+
+            chatLogContainer.appendChild(messageDiv);
+            // Scroll to bottom
+            chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
+        }
+
+        /**
+         * Displays a temporary loading spinner in the chat log.
+         * @returns {HTMLElement} The loading spinner element.
+         */
+        function showLoadingSpinner() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loadingSpinner';
+            loadingDiv.classList.add('assistant-message', 'message-box', 'w-12', 'h-12', 'flex', 'items-center', 'justify-center');
+            loadingDiv.innerHTML = `
+                <div class="loading-spinner inline-block w-6 h-6 border-2 border-gray-600 border-solid rounded-full animate-spin"></div>
+            `;
+            chatLogContainer.appendChild(loadingDiv);
+            chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
+            return loadingDiv;
+        }
+
+        /**
+         * Removes the loading spinner.
+         */
+        function hideLoadingSpinner(spinner) {
+            if (spinner) {
+                spinner.remove();
+            }
+        }
+
+
+        // --- API CALL LOGIC ---
+
+        /**
+         * Handles the API call with exponential backoff for resilience.
+         */
+        async function fetchWithBackoff(attempt = 1) {
+            const maxRetries = 5;
+            const delay = Math.pow(2, attempt) * 1000; 
+            
+            const payload = {
+                model: groqModel,
+                // Send the ENTIRE history array for conversational context
+                messages: chatHistory, 
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 429 && attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithBackoff(attempt + 1);
+                }
+
+                if (!response.ok) {
+                    const errorDetails = await response.json().catch(() => ({}));
+                    let errorMsg = `Proxy/API failed. Status: ${response.status}.`;
+                    errorMsg += ` Details: ${errorDetails.error?.message || 'Unknown error.'}`;
+                    throw new Error(errorMsg);
+                }
+                
+                const result = await response.json();
+                const text = result.choices?.[0]?.message?.content;
+
+                if (!text) {
+                    throw new Error("Proxy response was empty or malformed.");
+                }
+                
+                return text;
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                showError(`Failed to decode the message. ${error.message}`);
+                return null;
+            }
+        }
+
+        /**
+         * Main function to trigger the processing of a new input.
+         */
+        window.handleNewInput = async function() {
+            if (isFetching) return;
+            
+            const userQuery = userInput.value.trim();
+
+            if (!userQuery) {
+                showError("Please enter a message to decode.");
+                return;
+            }
+            
+            isFetching = true;
+            micButton.disabled = true;
+            sendButton.disabled = true;
+            document.getElementById('resetButton').disabled = true;
+            userInput.disabled = true;
+            
+            // 1. Add user message to history and display it
+            chatHistory.push({ role: "user", content: userQuery });
+            displayMessage("user", userQuery);
+            userInput.value = ''; // Clear input field
+
+            // 2. Show loading spinner
+            const spinner = showLoadingSpinner();
+            
+            // 3. Fetch response from the model
+            const assistantResponseText = await fetchWithBackoff();
+
+            // 4. Hide loading spinner
+            hideLoadingSpinner(spinner);
+            
+            if (assistantResponseText) {
+                // 5. Add assistant message to history
+                chatHistory.push({ role: "assistant", content: assistantResponseText });
+                
+                // 6. Display assistant message. The structured response occurs on the *first* bot response.
+                // chatHistory.length = 3 means: [system, user1, bot_full_analysis]
+                const isInitialStructuredResponse = chatHistory.length === 3; 
+                displayMessage("assistant", assistantResponseText, isInitialStructuredResponse);
+            }
+
+            // 7. Reset state
+            isFetching = false;
+            micButton.disabled = false;
+            sendButton.disabled = false;
+            document.getElementById('resetButton').disabled = false;
+            userInput.disabled = false;
+            autoExpand(userInput); // Reset textarea size
+        }
+
+        // --- UTILITY FUNCTIONS ---
+        
+        /**
+         * Utility function to show the custom error modal.
+         */
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            errorModal.classList.remove('opacity-0', 'pointer-events-none');
+            errorModal.querySelector('div').classList.remove('-translate-y-4');
+        }
+
+        /**
+         * Utility function to close the custom modal.
+         */
+        window.closeModal = function(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.add('-translate-y-4');
+        }
+        
         // --- Voice Input Setup (Web Speech API) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // Stop after first utterance
+            recognition.continuous = false; 
             recognition.interimResults = false;
             recognition.lang = 'en-US';
 
             recognition.onstart = () => {
                 isRecording = true;
-                micIcon.classList.add('text-red-400', 'animate-pulse'); // Visual cue for recording
+                micIcon.classList.add('text-red-400', 'animate-pulse'); 
                 micButton.title = "Recording... Click to stop.";
+                sendButton.disabled = true; // Disable send while recording
+                document.getElementById('resetButton').disabled = true;
             };
 
             recognition.onend = () => {
                 isRecording = false;
                 micIcon.classList.remove('text-red-400', 'animate-pulse');
                 micButton.title = "Voice Input (Speech-to-Text)";
-                micButton.disabled = false; // Ensure button is re-enabled
+                micButton.disabled = false; 
+                sendButton.disabled = isFetching; 
+                document.getElementById('resetButton').disabled = isFetching;
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 userInput.value = transcript;
+                autoExpand(userInput);
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 showError(`Voice Input Error: ${event.error}. Please ensure microphone permission is granted.`);
-                recognition.onend(); // Clean up state
+                recognition.onend(); 
             };
             
             micButton.onclick = toggleVoiceInput;
 
         } else {
-            // Disable button if API not supported
             micButton.disabled = true;
             micButton.title = "Voice Input Not Supported in this browser.";
         }
@@ -194,7 +507,7 @@
                 micButton.disabled = true; 
             } else {
                 try {
-                    userInput.value = ''; // Clear previous input
+                    userInput.value = ''; 
                     recognition.start();
                 } catch (e) {
                     console.error("Error starting recognition:", e);
@@ -202,175 +515,6 @@
                 }
             }
         }
-        // --- End Voice Input Setup ---
-
-        /**
-         * Parses the model's Markdown response and formats it into HTML.
-         * The model is instructed to use ### headers, which we'll convert to our styled divs.
-         * @param {string} text The raw text response from the API.
-         * @returns {string} Styled HTML content.
-         */
-        function parseAndStyleResponse(text) {
-            const sections = text.split('###').filter(s => s.trim().length > 0);
-            let html = '';
-
-            sections.forEach(section => {
-                // Split the header from the content. Example: "1. The Literal Meaning (The Surface)\nContent..."
-                const parts = section.trim().split('\n');
-                if (parts.length < 2) return;
-
-                const title = parts[0].trim();
-                const content = parts.slice(1).join('\n').trim();
-                
-                // Convert Markdown list items to HTML list items
-                const contentHtml = content
-                    .replace(/^\s*\-\s/gm, '<li>')
-                    .replace(/\* /gm, '<li>')
-                    .replace(/\n\s*<li>/g, '</li><li>') // handles multiline lists
-                    .replace(/<\/\s*li>\s*$/g, ''); // cleanup trailing </li>
-
-                const finalContent = contentHtml.startsWith('<li>') ? 
-                    `<ul class="list-disc ml-6">${contentHtml}</ul>` : 
-                    `<p>${contentHtml.replace(/\n/g, '<br>')}</p>`;
-
-                html += `
-                    <div class="result-section">
-                        <h3 class="text-lg font-semibold text-green-400">${title}</h3>
-                        ${finalContent}
-                    </div>
-                `;
-            });
-            return html;
-        }
-
-        /**
-         * Handles the API call with exponential backoff for resilience.
-         * @param {number} attempt The current retry attempt (starts at 1).
-         */
-        async function fetchWithBackoff(attempt = 1) {
-            const maxRetries = 5;
-            const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s, ...
-
-            const userQuery = userInput.value.trim();
-
-            if (!userQuery) {
-                showError("Please enter a message to decode.");
-                return;
-            }
-            
-            // The Groq API uses the standard OpenAI chat completions format.
-            const payload = {
-                model: groqModel,
-                messages: [
-                    { role: "system", content: systemInstructionText },
-                    { role: "user", content: userQuery }
-                ],
-                // Add any other desired parameters for the Groq API here, e.g., max_tokens, temperature
-            };
-
-            try {
-                // Check if the URL is still the placeholder (no longer an issue here)
-                if (apiUrl === 'REPLACE_WITH_YOUR_DEPLOYED_WORKER_URL') {
-                    throw new Error("API URL is not configured. Please replace the placeholder 'REPLACE_WITH_YOUR_DEPLOYED_WORKER_URL' with your Worker's URL.");
-                }
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.status === 429 && attempt < maxRetries) {
-                    // Too Many Requests, retry with backoff
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    return fetchWithBackoff(attempt + 1);
-                }
-
-                if (!response.ok) {
-                    // Try to parse error details from the proxy/API
-                    const errorDetails = await response.json().catch(() => ({}));
-                    let errorMsg = `Proxy/API failed. Status: ${response.status}.`;
-                    
-                    if (response.status === 404) {
-                        errorMsg += " Double-check the Worker URL is correct.";
-                    } else if (response.status === 500) {
-                        // This usually means the worker failed internally (e.g., missing API key or bad Groq request)
-                         errorMsg += ` Worker Error. Details: ${errorDetails.error?.message || 'Check your Cloudflare Worker logs for details.'}`;
-                    } else {
-                        errorMsg += ` Details: ${errorDetails.error?.message || 'Unknown error.'}`;
-                    }
-                    
-                    throw new Error(errorMsg);
-                }
-                
-                // Assuming the proxy returns a simple JSON object compatible with the OpenAI format:
-                // { choices: [{ message: { content: "..." } }] }
-                const result = await response.json();
-                const text = result.choices?.[0]?.message?.content;
-
-                if (text) {
-                    responseTextDiv.innerHTML = parseAndStyleResponse(text);
-                } else {
-                    throw new Error("Proxy response was empty or malformed.");
-                }
-
-            } catch (error) {
-                console.error("Fetch error:", error);
-                showError(`Failed to decode the message. ${error.message}`);
-            }
-        }
-
-        /**
-         * Main function to trigger the translation process.
-         */
-        window.translateTalk = async function() {
-            resultsDiv.style.display = 'none';
-            responseTextDiv.innerHTML = '';
-            showLoading(true);
-
-            await fetchWithBackoff();
-
-            showLoading(false);
-            if (responseTextDiv.innerHTML) {
-                resultsDiv.style.display = 'block';
-            }
-        }
-
-        /**
-         * Utility function to control the loading state.
-         * @param {boolean} isLoading
-         */
-        function showLoading(isLoading) {
-            translateButton.disabled = isLoading;
-            loadingDiv.style.display = isLoading ? 'block' : 'none';
-            userInput.disabled = isLoading;
-            if (isLoading) {
-                resultsDiv.style.display = 'none';
-            }
-        }
-        
-        /**
-         * Utility function to show the custom error modal.
-         * @param {string} message
-         */
-        function showError(message) {
-            errorMessageDiv.textContent = message;
-            errorModal.classList.remove('opacity-0', 'pointer-events-none');
-            errorModal.querySelector('div').classList.remove('-translate-y-4');
-        }
-
-        /**
-         * Utility function to close the custom modal.
-         * @param {string} id The ID of the modal to close.
-         */
-        window.closeModal = function(id) {
-            const modal = document.getElementById(id);
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            modal.querySelector('div').classList.add('-translate-y-4');
-        }
-
-        // Initialize state
-        showLoading(false);
     </script>
 
 </body>
