@@ -76,6 +76,53 @@
             margin-top: 0.5rem;
             font-style: italic;
         }
+        
+        /* Share Button Styles */
+        .share-container {
+            display: flex;
+            justify-content: flex-end; /* Aligns button to the right */
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .share-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            color: #9ca3af; /* Gray-400 */
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .share-btn:hover {
+            color: #27c390; /* Brand Green */
+        }
+
+        /* Donation Message Styles (NEW) */
+        .donation-message {
+            border: 1px solid #fbbf24; /* Amber-400 */
+            background: rgba(251, 191, 36, 0.1);
+            color: #f3f4f6;
+        }
+        .donation-btn {
+            background-color: #f59e0b; /* Amber-500 */
+            color: #111827;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+        .donation-btn:hover {
+            background-color: #d97706; /* Amber-600 */
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -83,7 +130,7 @@
     <div id="app" class="container mx-auto">
         <header class="text-center mb-4">
             <h1 class="text-4xl md:text-5xl font-extrabold header leading-tight">
-                Sangelea (WomenTalk Decoder GPT)
+                Sangela (WomenTalk Decoder GPT)
             </h1>
             <p class="text-gray-400 mt-2 italic">
                 Start by entering the cryptic message from your partner!
@@ -95,20 +142,14 @@
 
         <div class="card p-4 rounded-xl flex flex-col">
             
-            <!-- Conversation History Log -->
             <div id="chatLogContainer" class="p-2 mb-4 flex flex-col gap-3">
-                <!-- Initial welcome message will be populated by resetConversation() on load -->
-            </div>
+                </div>
 
-            <!-- Input Area (Restructured) -->
             <div class="flex flex-col p-2 pt-0">
                 
-                <!-- Text/Mic Row -->
                 <div class="relative mb-2">
-                    <!-- Text Area -->
                     <textarea id="userInput" rows="1" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-green-500 focus:border-green-500 transition duration-150 resize-none overflow-y-hidden pr-12" placeholder="Enter message or follow-up question..." oninput="autoExpand(this)" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleNewInput(); }"></textarea>
 
-                    <!-- Mic Button (Speech-to-Text) -->
                     <button id="micButton" class="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-gray-600 text-white hover:bg-gray-500 transition duration-150 disabled:opacity-50" title="Voice Input (Speech-to-Text)">
                         <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
@@ -116,13 +157,18 @@
                     </button>
                 </div>
 
-                <!-- Buttons Row -->
                 <div class="flex justify-end space-x-2">
-                    <!-- Reset Button -->
                     <button id="resetButton" class="px-4 py-2 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 disabled:opacity-50" onclick="resetConversation()">
                         Reset
                     </button>
-                    <!-- Send Button -->
+
+                    <button id="shareChatButton" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 flex items-center gap-2" onclick="shareFullConversation()" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                        </svg>
+                        Share Chat
+                    </button>
+
                     <button id="sendButton" class="px-4 py-2 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50" onclick="handleNewInput()">
                         Send
                     </button>
@@ -130,7 +176,6 @@
             </div>
         </div>
 
-        <!-- Hidden Modal for API Error/Warning -->
         <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
             <div class="bg-red-900 p-6 rounded-xl shadow-2xl max-w-sm w-full transform -translate-y-4 transition-transform duration-300">
                 <h3 class="text-xl font-bold text-red-300 mb-4">Transmission Error</h3>
@@ -145,6 +190,7 @@
         // --- CONFIGURATION ---
         const apiUrl = 'https://groq-api-proxy.cwbernards.workers.dev'; 
         const groqModel = 'llama-3.3-70b-versatile'; 
+        const buyCoffeeLink = 'https://buymeacoffee.com/sangela';
 
         // Initial system instruction that governs the bot's persona and initial output format
         const structuredSystemInstruction = `
@@ -176,6 +222,7 @@
         // --- DOM ELEMENTS ---
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
+        const shareChatButton = document.getElementById('shareChatButton');
         const micButton = document.getElementById('micButton');
         const micIcon = document.getElementById('micIcon');
         const chatLogContainer = document.getElementById('chatLogContainer');
@@ -221,6 +268,9 @@
             micButton.disabled = false;
             sendButton.disabled = false;
             userInput.disabled = false;
+            
+            // Disable Share button on reset
+            if(shareChatButton) shareChatButton.disabled = true;
 
             chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
         }
@@ -289,19 +339,71 @@
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message-box', role === 'user' ? 'user-message' : 'assistant-message');
             
+            // 1. Process Content
+            let messageHTML = '';
             if (role === 'user') {
-                // Simple display for user messages
-                messageDiv.textContent = content;
-            } else if (isInitialStructuredResponse) {
-                // Special parsing for the structured response (which is the first bot response)
-                messageDiv.innerHTML = parseStructuredResponse(content);
+                messageHTML = content;
+                messageDiv.textContent = messageHTML;
             } else {
-                // Simple display for conversational messages (follow-up)
-                messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+                // Assistant logic
+                if (isInitialStructuredResponse) {
+                    messageHTML = parseStructuredResponse(content);
+                } else {
+                    messageHTML = content.replace(/\n/g, '<br>');
+                }
+                messageDiv.innerHTML = messageHTML;
+
+                // Create container for the share button (Individual Bubble)
+                const shareContainer = document.createElement('div');
+                shareContainer.className = 'share-container';
+                
+                // Create the button with an SVG icon
+                shareContainer.innerHTML = `
+                    <button class="share-btn" onclick="handleShare(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        Share / Copy
+                    </button>
+                `;
+                messageDiv.appendChild(shareContainer);
             }
 
             chatLogContainer.appendChild(messageDiv);
-            // Scroll to bottom
+            chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
+        }
+
+        /**
+         * NEW: Displays a specialized Donation Request Bubble
+         */
+        function showDonationMessage(context) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message-box', 'assistant-message', 'donation-message');
+            
+            const introText = context === 'share' 
+                ? "Glad I could help you decode the chaos! If I saved your evening, consider fueling my circuits."
+                : "I'm having fun helping you survive! If you want to keep Sangela running smooth, a coffee helps.";
+
+            messageDiv.innerHTML = `
+                <p>☕ <strong>Sangela needs caffeine too!</strong></p>
+                <p class="text-sm mt-1">${introText}</p>
+                <a href="${buyCoffeeLink}" target="_blank" class="donation-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                        <line x1="6" y1="1" x2="6" y2="4"></line>
+                        <line x1="10" y1="1" x2="10" y2="4"></line>
+                        <line x1="14" y1="1" x2="14" y2="4"></line>
+                    </svg>
+                    Buy me a Coffee
+                </a>
+            `;
+
+            chatLogContainer.appendChild(messageDiv);
             chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
         }
 
@@ -342,7 +444,6 @@
             
             const payload = {
                 model: groqModel,
-                // Send the ENTIRE history array for conversational context
                 messages: chatHistory, 
             };
 
@@ -359,6 +460,9 @@
                 }
 
                 if (!response.ok) {
+                    if (response.status === 429 || response.status === 503) {
+                        throw new Error("Sangela is either busy or IT exceeded the free tier limits. Please try again later!");
+                    }
                     const errorDetails = await response.json().catch(() => ({}));
                     let errorMsg = `Proxy/API failed. Status: ${response.status}.`;
                     errorMsg += ` Details: ${errorDetails.error?.message || 'Unknown error.'}`;
@@ -368,15 +472,17 @@
                 const result = await response.json();
                 const text = result.choices?.[0]?.message?.content;
 
-                if (!text) {
-                    throw new Error("Proxy response was empty or malformed.");
-                }
+                if (!text) throw new Error("Proxy response was empty or malformed.");
                 
                 return text;
 
             } catch (error) {
                 console.error("Fetch error:", error);
-                showError(`Failed to decode the message. ${error.message}`);
+                let displayMsg = error.message;
+                if (error.message.includes('Failed to fetch')) {
+                    displayMsg = "Sangela can't reach the server. Please check your internet connection.";
+                }
+                showError(displayMsg);
                 return null;
             }
         }
@@ -397,63 +503,151 @@
             isFetching = true;
             micButton.disabled = true;
             sendButton.disabled = true;
+            shareChatButton.disabled = true;
             document.getElementById('resetButton').disabled = true;
             userInput.disabled = true;
             
-            // 1. Add user message to history and display it
             chatHistory.push({ role: "user", content: userQuery });
             displayMessage("user", userQuery);
-            userInput.value = ''; // Clear input field
+            userInput.value = '';
 
-            // 2. Show loading spinner
             const spinner = showLoadingSpinner();
-            
-            // 3. Fetch response from the model
             const assistantResponseText = await fetchWithBackoff();
-
-            // 4. Hide loading spinner
             hideLoadingSpinner(spinner);
             
             if (assistantResponseText) {
-                // 5. Add assistant message to history
                 chatHistory.push({ role: "assistant", content: assistantResponseText });
                 
-                // 6. Display assistant message. The structured response occurs on the *first* bot response.
-                // chatHistory.length = 3 means: [system, user1, bot_full_analysis]
                 const isInitialStructuredResponse = chatHistory.length === 3; 
                 displayMessage("assistant", assistantResponseText, isInitialStructuredResponse);
+
+                // --- NEW: Scenario 1 (10% Chance after follow-up) ---
+                // We only check if it is NOT the first message (length > 3)
+                if (chatHistory.length > 3) {
+                    const randomVal = Math.random(); // 0.0 to 1.0
+                    if (randomVal < 0.1) { // 10% chance
+                        setTimeout(() => showDonationMessage('chat'), 1000); // Small delay for effect
+                    }
+                }
             }
 
-            // 7. Reset state
             isFetching = false;
             micButton.disabled = false;
             sendButton.disabled = false;
+            shareChatButton.disabled = false;
             document.getElementById('resetButton').disabled = false;
             userInput.disabled = false;
-            autoExpand(userInput); // Reset textarea size
+            autoExpand(userInput);
         }
 
         // --- UTILITY FUNCTIONS ---
         
         /**
-         * Utility function to show the custom error modal.
+         * Handles the Individual Bubble Share functionality.
          */
+        window.handleShare = async function(btnElement) {
+            const messageBox = btnElement.closest('.message-box');
+            if (!messageBox) return;
+
+            const clone = messageBox.cloneNode(true);
+            const shareContainer = clone.querySelector('.share-container');
+            if (shareContainer) shareContainer.remove();
+
+            let textToShare = clone.innerText.trim();
+            const appUrl = window.location.href; 
+            const footer = `\n\n🔮 Decoded by Sangela (WomenTalk Decoder).\nTry it here: ${appUrl}`;
+            const fullText = textToShare + footer;
+            const originalBtnText = btnElement.innerHTML;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Sangela Translation',
+                        text: fullText,
+                        url: appUrl
+                    });
+                } catch (err) { console.log('Share cancelled', err); }
+            } else {
+                try {
+                    await navigator.clipboard.writeText(fullText);
+                    btnElement.innerHTML = `<span class="text-green-400">Copied!</span>`;
+                    setTimeout(() => { btnElement.innerHTML = originalBtnText; }, 2000);
+                } catch (err) { showError('Failed to copy.'); }
+            }
+        }
+
+        /**
+         * Generates a text transcript of the full conversation and shares it.
+         */
+        window.shareFullConversation = async function() {
+            if (chatHistory.length <= 1) {
+                showError("Start a conversation first before sharing!");
+                return;
+            }
+
+            let transcript = "🔥 *Sangela: The WomenTalk Decoder* 🔥\n\n";
+
+            chatHistory.forEach(msg => {
+                if (msg.role === 'system') return; 
+                const speaker = msg.role === 'user' ? 'ME' : 'SANGELA';
+                let cleanContent = msg.content
+                    .replace(/### (.*)/g, '👉 *$1*')
+                    .replace(/\*\*/g, '')
+                    .trim();
+                transcript += `🗣️ *${speaker}:*\n${cleanContent}\n\n`;
+            });
+
+            transcript += `----------------\n🔮 *Decode your relationship here:* \n${window.location.href}`;
+
+            let shareSuccess = false;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Sangela Conversation',
+                        text: transcript,
+                        url: window.location.href 
+                    });
+                    shareSuccess = true;
+                } catch (err) { console.log('Share cancelled'); }
+            } else {
+                try {
+                    await navigator.clipboard.writeText(transcript);
+                    const btn = document.getElementById('shareChatButton');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = `Copied!`;
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    setTimeout(() => { 
+                        btn.innerHTML = originalText; 
+                        btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    }, 2000);
+                    shareSuccess = true;
+                } catch (err) { showError('Failed to copy.'); }
+            }
+
+            // --- NEW: Scenario 2 (20% Chance after Share) ---
+            if (shareSuccess) {
+                const randomVal = Math.random();
+                if (randomVal < 0.2) { // 20% chance
+                    setTimeout(() => showDonationMessage('share'), 1500); // 1.5s delay
+                }
+            }
+        }
+
         function showError(message) {
             errorMessageDiv.textContent = message;
             errorModal.classList.remove('opacity-0', 'pointer-events-none');
             errorModal.querySelector('div').classList.remove('-translate-y-4');
         }
 
-        /**
-         * Utility function to close the custom modal.
-         */
         window.closeModal = function(id) {
             const modal = document.getElementById(id);
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.querySelector('div').classList.add('-translate-y-4');
         }
         
-        // --- Voice Input Setup (Web Speech API) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
@@ -465,17 +659,19 @@
             recognition.onstart = () => {
                 isRecording = true;
                 micIcon.classList.add('text-red-400', 'animate-pulse'); 
-                micButton.title = "Recording... Click to stop.";
-                sendButton.disabled = true; // Disable send while recording
+                micButton.title = "Recording...";
+                sendButton.disabled = true; 
+                shareChatButton.disabled = true;
                 document.getElementById('resetButton').disabled = true;
             };
 
             recognition.onend = () => {
                 isRecording = false;
                 micIcon.classList.remove('text-red-400', 'animate-pulse');
-                micButton.title = "Voice Input (Speech-to-Text)";
+                micButton.title = "Voice Input";
                 micButton.disabled = false; 
                 sendButton.disabled = isFetching; 
+                if (chatHistory.length > 1 && !isFetching) shareChatButton.disabled = false;
                 document.getElementById('resetButton').disabled = isFetching;
             };
 
@@ -487,20 +683,15 @@
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
-                showError(`Voice Input Error: ${event.error}. Please ensure microphone permission is granted.`);
+                showError(`Voice Input Error: ${event.error}.`);
                 recognition.onend(); 
             };
             
             micButton.onclick = toggleVoiceInput;
-
         } else {
             micButton.disabled = true;
-            micButton.title = "Voice Input Not Supported in this browser.";
         }
 
-        /**
-         * Starts or stops voice recognition.
-         */
         function toggleVoiceInput() {
             if (isRecording) {
                 recognition.stop();
@@ -511,11 +702,10 @@
                     recognition.start();
                 } catch (e) {
                     console.error("Error starting recognition:", e);
-                    showError("Could not start microphone. Check browser permissions.");
+                    showError("Check browser permissions.");
                 }
             }
         }
     </script>
-
 </body>
 </html>
