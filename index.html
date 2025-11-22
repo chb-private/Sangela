@@ -100,7 +100,7 @@
             color: #27c390; /* Brand Green */
         }
 
-        /* Donation Message Styles (NEW) */
+        /* Donation Message Styles */
         .donation-message {
             border: 1px solid #fbbf24; /* Amber-400 */
             background: rgba(251, 191, 36, 0.1);
@@ -130,7 +130,7 @@
     <div id="app" class="container mx-auto">
         <header class="text-center mb-4">
             <h1 class="text-4xl md:text-5xl font-extrabold header leading-tight">
-                Sangela (WomenTalk Decoder GPT)
+                Sangelea (WomenTalk Decoder GPT)
             </h1>
             <p class="text-gray-400 mt-2 italic">
                 Start by entering the cryptic message from your partner!
@@ -198,22 +198,24 @@
 
             --- CONVERSATIONAL FLOW PROTOCOL ---
 
-            1.  **FIRST MESSAGE ONLY (Full Decoding Initiation):** When you receive the user's first message (containing what was said by the women), you MUST immediately provide the full decoding using this strict Markdown format:
+            1.  **FIRST MESSAGE ONLY (Full Decoding Initiation):** When you receive the user's first message (containing what was said by the women), you MUST immediately provide the full decoding using this strict Markdown format. Keep the explanations concise, punchy, and direct:
                 
                 ### 1. The Literal Meaning (The Surface)
-                [Explanation of what the women literally said.]
+                [Brief explanation of what the women literally said.]
 
                 ### 2. The Man Translation (The Initial Worst-Case Subtext)
-                [Provide two options: 1) The 'Best Outcome' (Warning Signal - potential conversation about feelings, a small chore request, etc) and 2) The 'Nightmare' (High Alert - emotional breakdown incoming, implying loss of control and free time, or resources).]
+                [Provide two options: 1) The 'Best Outcome' (Warning Signal) and 2) The 'Nightmare' (High Alert).]
 
                 ### 3. The Suggested Response (The Fix)
-                [A suggested highly specific, but technically sound, action to mitigate the 'Nightmare' scenario, focusing on damage control and self-preservation.]
+                [A suggested highly specific, short, and actionable step to mitigate the 'Nightmare' scenario.]
 
                 ---
 
-                Crucially, IMMEDIATELY following the structured analysis, you MUST ask ONE specific clarifying question about the context or tone. This question might seem as if you were interested to help, but in reality you will use it to CONFIRM the 'Nightmare' scenario. (e.g., "Was this said immediately after you finished playing video games?" or "Describe the tone of voice: was it soft, demanding, or a sigh that could curdle milk?").
+                Crucially, IMMEDIATELY following the structured analysis, you MUST ask ONE specific clarifying question about the context or tone. This question might seem as if you were interested to help, but in reality you will use it to CONFIRM the 'Nightmare' scenario.
 
-            2.  **SECOND MESSAGE AND LATER (Confirmation):** When you receive the user's answer to the clarifying question, your response MUST be conversational (not structured Markdown). You MUST use the user's input to confirm and support the 'Nightmare' scenario presented in the first turn, focusing on how this information impacts the user's sanity and free time. Maintain the stereotyped persona for all remaining conversation. Do NOT ask more follow-up questions.
+            2.  **SECOND MESSAGE AND LATER (Confirmation):** When you receive the user's answer to the clarifying question, your response MUST be conversational (not structured Markdown). 
+            
+            **IMPORTANT: Keep your response SHORT (maximum 4-5 sentences).** Use the user's input to confirm the 'Nightmare' scenario immediately and be SHORT and PUNCHY. Do NOT ask more follow-up questions.
         `;
         
         // --- GLOBAL STATE ---
@@ -521,12 +523,11 @@
                 const isInitialStructuredResponse = chatHistory.length === 3; 
                 displayMessage("assistant", assistantResponseText, isInitialStructuredResponse);
 
-                // --- NEW: Scenario 1 (10% Chance after follow-up) ---
-                // We only check if it is NOT the first message (length > 3)
+                // --- Scenario 1 (10% Chance after follow-up) ---
                 if (chatHistory.length > 3) {
-                    const randomVal = Math.random(); // 0.0 to 1.0
+                    const randomVal = Math.random(); 
                     if (randomVal < 0.1) { // 10% chance
-                        setTimeout(() => showDonationMessage('chat'), 1000); // Small delay for effect
+                        setTimeout(() => showDonationMessage('chat'), 1000); 
                     }
                 }
             }
@@ -563,8 +564,8 @@
                 try {
                     await navigator.share({
                         title: 'Sangela Translation',
-                        text: fullText,
-                        url: appUrl
+                        text: fullText
+                        // REMOVED 'url' parameter to prevent duplication
                     });
                 } catch (err) { console.log('Share cancelled', err); }
             } else {
@@ -605,8 +606,8 @@
                 try {
                     await navigator.share({
                         title: 'Sangela Conversation',
-                        text: transcript,
-                        url: window.location.href 
+                        text: transcript
+                        // REMOVED 'url' parameter to prevent duplication
                     });
                     shareSuccess = true;
                 } catch (err) { console.log('Share cancelled'); }
@@ -627,7 +628,7 @@
                 } catch (err) { showError('Failed to copy.'); }
             }
 
-            // --- NEW: Scenario 2 (20% Chance after Share) ---
+            // --- Scenario 2 (20% Chance after Share) ---
             if (shareSuccess) {
                 const randomVal = Math.random();
                 if (randomVal < 0.2) { // 20% chance
