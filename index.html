@@ -53,10 +53,11 @@
         }
         
         /* Structured Decoder Output inside Chat (First Message) */
+        /* The header styles now apply to content within a single bubble */
         .structured-output h3 {
             font-size: 1.125rem;
             font-weight: 700;
-            margin-top: 1rem;
+            margin-top: 0.25rem; /* Reduced top margin since bubble is fresh */
             margin-bottom: 0.5rem;
             border-bottom: 2px solid #27c390; 
             padding-bottom: 0.25rem;
@@ -77,29 +78,6 @@
             font-style: italic;
         }
         
-        /* Share Button Styles */
-        .share-container {
-            display: flex;
-            justify-content: flex-end; /* Aligns button to the right */
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .share-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.75rem;
-            color: #9ca3af; /* Gray-400 */
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .share-btn:hover {
-            color: #27c390; /* Brand Green */
-        }
-
         /* Donation Message Styles */
         .donation-message {
             border: 1px solid #fbbf24; /* Amber-400 */
@@ -133,7 +111,7 @@
                 Sangela (WomenTalk Decoder GPT)
             </h1>
             <p class="text-gray-400 mt-2 italic">
-                Start by entering the cryptic message from your partner!
+                Start by entering the cryptic message from your partner...
             </p>
             <p class="groq-disclaimer">
                 (Powered by the Groq API, using the supported **Llama-3.3-70b-versatile** model for extreme speed.)
@@ -142,26 +120,35 @@
 
         <div class="card p-4 rounded-xl flex flex-col">
             
+            <!-- Conversation History Log -->
             <div id="chatLogContainer" class="p-2 mb-4 flex flex-col gap-3">
-                </div>
+                <!-- Initial welcome message will be populated by resetConversation() on load -->
+            </div>
 
+            <!-- Input Area -->
             <div class="flex flex-col p-2 pt-0">
                 
+                <!-- Text/Mic Row -->
                 <div class="relative mb-2">
+                    <!-- Text Area -->
                     <textarea id="userInput" rows="1" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-green-500 focus:border-green-500 transition duration-150 resize-none overflow-y-hidden pr-12" placeholder="Enter message or follow-up question..." oninput="autoExpand(this)" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleNewInput(); }"></textarea>
 
+                    <!-- Mic Button (Speech-to-Text) -->
                     <button id="micButton" class="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-gray-600 text-white hover:bg-gray-500 transition duration-150 disabled:opacity-50" title="Voice Input (Speech-to-Text)">
-                        <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
                         </svg>
                     </button>
                 </div>
 
+                <!-- Buttons Row -->
                 <div class="flex justify-end space-x-2">
+                    <!-- Reset Button -->
                     <button id="resetButton" class="px-4 py-2 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 disabled:opacity-50" onclick="resetConversation()">
                         Reset
                     </button>
 
+                    <!-- Share Chat Button -->
                     <button id="shareChatButton" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 flex items-center gap-2" onclick="shareFullConversation()" disabled>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
@@ -169,6 +156,7 @@
                         Share Chat
                     </button>
 
+                    <!-- Send Button -->
                     <button id="sendButton" class="px-4 py-2 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50" onclick="handleNewInput()">
                         Send
                     </button>
@@ -176,6 +164,7 @@
             </div>
         </div>
 
+        <!-- Hidden Modal for API Error/Warning -->
         <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
             <div class="bg-red-900 p-6 rounded-xl shadow-2xl max-w-sm w-full transform -translate-y-4 transition-transform duration-300">
                 <h3 class="text-xl font-bold text-red-300 mb-4">Transmission Error</h3>
@@ -188,6 +177,8 @@
 
     <script type="module">
         // --- CONFIGURATION ---
+        const MIN_BUBBLE_DELAY_MS = 1000; // Minimum delay between subsequent bubbles
+        const MAX_BUBBLE_DELAY_MS = 3000; // Maximum delay between subsequent bubbles
         const apiUrl = 'https://groq-api-proxy.cwbernards.workers.dev'; 
         const groqModel = 'llama-3.3-70b-versatile'; 
         const buyCoffeeLink = 'https://buymeacoffee.com/sangela';
@@ -198,12 +189,12 @@
 
             --- CONVERSATIONAL FLOW PROTOCOL ---
 
-            1.  **FIRST MESSAGE ONLY (Full Decoding Initiation):** When you receive the user's first message (containing what was said by the women), you MUST immediately provide the full decoding using this strict Markdown format. Keep the explanations concise, punchy, and direct:
+            1.  **FIRST MESSAGE ONLY (Full Decoding Initiation):** When you receive the user's first message (containing what was said by the women), you MUST immediately provide the full decoding using this strict Markdown format:
                 
                 ### 1. The Literal Meaning (The Surface)
                 [Brief explanation of what the women literally said.]
 
-                ### 2. The Man Translation (The Initial Worst-Case Subtext)
+                ### 2. The Man Translation (The Potential Subtext)
                 [Provide two options: 1) The 'Best Outcome' and 2) The 'Nightmare'.]
 
                 ### 3. The Suggested Response (The Fix)
@@ -215,7 +206,7 @@
 
             2.  **SECOND MESSAGE AND LATER (Confirmation):** When you receive the user's answer to the clarifying question, your response MUST be conversational (not structured Markdown). 
             
-            **IMPORTANT: Keep your response SHORT for the first message and use a maximum of 4-5 sentences per section (Literal Meaning, Man Translation, and Suggested Response).** Use the user's input to confirm the 'Nightmare' scenario immediately and be SHORT and PUNCHY. Do NOT ask more follow-up questions.
+            **IMPORTANT: Keep your response relatively SHORT for the first message and use a maximum of 4-5 sentences per section (Literal Meaning, Man Translation, and Suggested Response).** Use the user's input to confirm the 'Nightmare' scenario immediately and be SHORT and PUNCHY. Do NOT ask more follow-up questions.
         `;
         
         // --- GLOBAL STATE ---
@@ -241,138 +232,170 @@
         let recognition = null;
         let isRecording = false;
 
+        // --- UTILITY FUNCTIONS ---
+        
+        /**
+         * Generates a random delay between MIN_BUBBLE_DELAY_MS and MAX_BUBBLE_DELAY_MS.
+         * @returns {number} The delay in milliseconds.
+         */
+        function getRandomDelay() {
+            return Math.floor(Math.random() * (MAX_BUBBLE_DELAY_MS - MIN_BUBBLE_DELAY_MS + 1)) + MIN_BUBBLE_DELAY_MS;
+        }
+
+        // --- SOUND LOGIC ---
+        function playNotificationSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                
+                const audioCtx = new AudioContext();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+
+                oscillator.start();
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                oscillator.stop(audioCtx.currentTime + 0.2);
+
+            } catch (e) {
+                console.warn("Could not play sound, likely due to browser autoplay policy.", e);
+            }
+        }
+        
         // --- INITIALIZATION & RESET ---
 
         function initializeChat() {
-            // Start history with the System instruction
             chatHistory = [{
                 role: "system",
                 content: structuredSystemInstruction
             }];
         }
         
-        /**
-         * Clears the chat history and UI to start a new conversation.
-         */
         window.resetConversation = function() {
-            // 1. Clear chat log visually and set welcome message
             chatLogContainer.innerHTML = initialWelcomeMessageHTML;
-            
-            // 2. Re-initialize state (history)
             initializeChat();
-
-            // 3. Clear input
             userInput.value = '';
-            window.autoExpand(userInput); // Reset textarea size
-
-            // 4. Reset UI state
+            window.autoExpand(userInput); 
             isFetching = false;
             micButton.disabled = false;
             sendButton.disabled = false;
             userInput.disabled = false;
-            
-            // Disable Share button on reset
             if(shareChatButton) shareChatButton.disabled = true;
-
             chatLogContainer.scrollTop = chatLogContainer.scrollHeight;
         }
 
-        // Initialize on load
         window.onload = resetConversation;
         
-        // Function to allow textarea to grow with input
         window.autoExpand = function(field) {
             field.style.height = 'auto';
             field.style.height = (field.scrollHeight) + 'px';
         };
 
-        // --- UI RENDERING ---
+        // --- CORE LOGIC FOR MULTI-BUBBLE RESPONSE ---
 
         /**
-         * Parses the model's Markdown response (for the full, structured message) 
-         * and formats it into HTML.
+         * Formats a single structured markdown section (starting with '###') into HTML.
+         * @param {string} text The markdown section content.
+         * @returns {string} HTML content.
          */
-        function parseStructuredResponse(text) {
-            // Check if the response is conversational (no structured headers)
-            if (!text.includes('###')) {
+        function formatStructuredSectionHtml(text) {
+            // 1. Split the section into title and content
+            const parts = text.trim().split('\n');
+            if (parts.length < 2) return text.replace(/\n/g, '<br>');
+
+            // The first line must be the header (### ...)
+            const titleMatch = parts[0].trim().match(/^### (.*)/);
+            if (!titleMatch) {
+                // Fallback for conversational or non-standard content
                 return text.replace(/\n/g, '<br>');
             }
 
-            // If structured, proceed with parsing
-            const sections = text.split('###').filter(s => s.trim().length > 0);
-            let html = '<div class="structured-output">';
+            const title = titleMatch[1].trim();
+            const content = parts.slice(1).join('\n').trim();
+            
+            // 2. Format content (lists, paragraphs)
+            const contentHtml = content
+                .replace(/^\s*[\-\*]\s/gm, '<li>') // Handles - or * list markers
+                .replace(/\n\s*<li>/g, '</li><li>')
+                .replace(/<\/\s*li>\s*$/g, ''); 
 
-            sections.forEach(section => {
-                const parts = section.trim().split('\n');
-                if (parts.length < 2) return;
+            const finalContent = contentHtml.startsWith('<li>') ? 
+                `<ul class="list-disc ml-6">${contentHtml}</ul>` : 
+                `<p>${contentHtml.replace(/\n/g, '<br>')}</p>`;
 
-                const title = parts[0].trim();
-                const content = parts.slice(1).join('\n').trim();
-                
-                // Convert Markdown list items to HTML list items
-                const contentHtml = content
-                    .replace(/^\s*\-\s/gm, '<li>')
-                    .replace(/\* /gm, '<li>')
-                    .replace(/\n\s*<li>/g, '</li><li>')
-                    .replace(/<\/\s*li>\s*$/g, ''); 
-
-                const finalContent = contentHtml.startsWith('<li>') ? 
-                    `<ul class="list-disc ml-6">${contentHtml}</ul>` : 
-                    `<p>${contentHtml.replace(/\n/g, '<br>')}</p>`;
-
-                html += `
+            // 3. Assemble HTML for a single section
+            const html = `
+                <div class="structured-output">
                     <div class="result-section">
                         <h3>${title}</h3>
                         ${finalContent}
                     </div>
-                `;
-            });
-            html += '</div>';
+                </div>
+            `;
             return html;
         }
 
+
         /**
-         * Displays a message in the chat log.
+         * Splits the initial full assistant response into multiple bubble contents.
+         * @param {string} text - The raw LLM response.
+         * @returns {Array<string>} An array of message contents, where structured parts are prefixed with '###'.
+         */
+        function splitAssistantResponse(text) {
+            // 1. Split the text based on the horizontal rule
+            const parts = text.split('---');
+            const structuredPart = parts[0].trim();
+            // The follow-up question is everything after the first '---' (which might contain multiple lines)
+            const followUpQuestion = parts.slice(1).join('---').trim(); 
+            
+            // 2. Split the structured part by the '### ' header pattern, capturing the header prefix
+            // This regex lookahead is crucial to keep the '###' prefix for later parsing
+            const structuredSections = structuredPart.split(/(?=###)/).filter(s => s.trim().length > 0);
+            
+            let bubbles = structuredSections.map(s => s.trim());
+            
+            if (followUpQuestion) {
+                // The follow-up question is the final, non-structured bubble
+                bubbles.push(followUpQuestion);
+            }
+            
+            return bubbles;
+        }
+
+        // --- UI RENDERING ---
+
+        /**
+         * Displays a message in the chat log (now handling single bubbles only).
          * @param {string} role 'user' or 'assistant'.
          * @param {string} content The message text.
-         * @param {boolean} isInitialStructuredResponse If true, uses special parsing.
+         * @param {boolean} isStructuredPart If true, the content is a structured section (starts with '###').
          */
-        function displayMessage(role, content, isInitialStructuredResponse = false) {
+        function displayMessage(role, content, isStructuredPart = false) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message-box', role === 'user' ? 'user-message' : 'assistant-message');
             
-            // 1. Process Content
             let messageHTML = '';
             if (role === 'user') {
                 messageHTML = content;
                 messageDiv.textContent = messageHTML;
             } else {
                 // Assistant logic
-                if (isInitialStructuredResponse) {
-                    messageHTML = parseStructuredResponse(content);
+                if (isStructuredPart) {
+                    messageHTML = formatStructuredSectionHtml(content);
                 } else {
                     messageHTML = content.replace(/\n/g, '<br>');
                 }
                 messageDiv.innerHTML = messageHTML;
 
-                // Create container for the share button (Individual Bubble)
-                const shareContainer = document.createElement('div');
-                shareContainer.className = 'share-container';
-                
-                // Create the button with an SVG icon
-                shareContainer.innerHTML = `
-                    <button class="share-btn" onclick="handleShare(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="18" cy="5" r="3"></circle>
-                            <circle cx="6" cy="12" r="3"></circle>
-                            <circle cx="18" cy="19" r="3"></circle>
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                        </svg>
-                        Share / Copy
-                    </button>
-                `;
-                messageDiv.appendChild(shareContainer);
+                // Removed individual share button generation here
             }
 
             chatLogContainer.appendChild(messageDiv);
@@ -380,7 +403,7 @@
         }
 
         /**
-         * NEW: Displays a specialized Donation Request Bubble
+         * Displays a specialized Donation Request Bubble
          */
         function showDonationMessage(context) {
             const messageDiv = document.createElement('div');
@@ -521,10 +544,35 @@
                 chatHistory.push({ role: "assistant", content: assistantResponseText });
                 
                 const isInitialStructuredResponse = chatHistory.length === 3; 
-                displayMessage("assistant", assistantResponseText, isInitialStructuredResponse);
 
+                if (isInitialStructuredResponse) {
+                    const bubbles = splitAssistantResponse(assistantResponseText);
+                    let delay = 0;
+                    bubbles.forEach((content, index) => {
+                        // Calculate a random delay for the current bubble
+                        const currentDelay = getRandomDelay();
+
+                        setTimeout(() => {
+                            // Check if the content starts with the markdown header prefix
+                            const isStructuredPart = content.startsWith('###'); 
+                            displayMessage("assistant", content, isStructuredPart);
+                            
+                            // Play sound after every bubble
+                            playNotificationSound();
+                            
+                        }, delay);
+                        // Increase delay for the next bubble by a random amount
+                        delay += currentDelay; 
+                    });
+
+                } else {
+                    // Subsequent conversational response (one bubble)
+                    displayMessage("assistant", assistantResponseText, false);
+                    playNotificationSound();
+                }
+                
                 // --- Scenario 1 (10% Chance after follow-up) ---
-                if (chatHistory.length > 3) {
+                if (!isInitialStructuredResponse && chatHistory.length > 3) {
                     const randomVal = Math.random(); 
                     if (randomVal < 0.1) { // 10% chance
                         setTimeout(() => showDonationMessage('chat'), 1000); 
@@ -544,40 +592,6 @@
         // --- UTILITY FUNCTIONS ---
         
         /**
-         * Handles the Individual Bubble Share functionality.
-         */
-        window.handleShare = async function(btnElement) {
-            const messageBox = btnElement.closest('.message-box');
-            if (!messageBox) return;
-
-            const clone = messageBox.cloneNode(true);
-            const shareContainer = clone.querySelector('.share-container');
-            if (shareContainer) shareContainer.remove();
-
-            let textToShare = clone.innerText.trim();
-            const appUrl = window.location.href; 
-            const footer = `\n\n🔮 Decoded by Sangela (WomenTalk Decoder).\nTry it here: ${appUrl}`;
-            const fullText = textToShare + footer;
-            const originalBtnText = btnElement.innerHTML;
-
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: 'Sangela Translation',
-                        text: fullText
-                        // REMOVED 'url' parameter to prevent duplication
-                    });
-                } catch (err) { console.log('Share cancelled', err); }
-            } else {
-                try {
-                    await navigator.clipboard.writeText(fullText);
-                    btnElement.innerHTML = `<span class="text-green-400">Copied!</span>`;
-                    setTimeout(() => { btnElement.innerHTML = originalBtnText; }, 2000);
-                } catch (err) { showError('Failed to copy.'); }
-            }
-        }
-
-        /**
          * Generates a text transcript of the full conversation and shares it.
          */
         window.shareFullConversation = async function() {
@@ -591,8 +605,9 @@
             chatHistory.forEach(msg => {
                 if (msg.role === 'system') return; 
                 const speaker = msg.role === 'user' ? 'ME' : 'SANGELA';
+                // Clean up structured headers and bolding for the transcript
                 let cleanContent = msg.content
-                    .replace(/### (.*)/g, '👉 *$1*')
+                    .replace(/### (.*)/g, '👉 $1')
                     .replace(/\*\*/g, '')
                     .trim();
                 transcript += `🗣️ *${speaker}:*\n${cleanContent}\n\n`;
@@ -607,7 +622,6 @@
                     await navigator.share({
                         title: 'Sangela Conversation',
                         text: transcript
-                        // REMOVED 'url' parameter to prevent duplication
                     });
                     shareSuccess = true;
                 } catch (err) { console.log('Share cancelled'); }
